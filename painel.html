@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Localizações - Histórico</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; height: 100vh; }
+    
+    #sidebar {
+      width: 320px;
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    
+    .sidebar-header {
+      padding: 16px;
+      background: #4f46e5;
+      color: white;
+    }
+    .sidebar-header h2 { margin: 0; font-size: 18px; }
+    .sidebar-header p { margin: 4px 0 0; font-size: 12px; opacity: 0.8; }
+
+    #lista-historico {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .item-historico {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .item-historico:hover {
+      background: #eef2ff;
+      border-color: #6366f1;
+    }
+
+    .item-historico.active {
+      background: #e0e7ff;
+      border-color: #4f46e5;
+    }
+
+    .item-data { font-weight: bold; font-size: 14px; color: #111827; }
+    .item-hora { font-size: 13px; color: #4f46e5; font-weight: 600; margin-top: 2px; }
+    .item-coords { font-size: 11px; color: #6b7280; margin-top: 4px; }
+
+    #map { flex: 1; height: 100vh; }
+
+    @media (max-width: 600px) {
+      body { flex-direction: column-reverse; }
+      #sidebar { width: 100%; height: 40vh; }
+      #map { height: 60vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <h2>Histórico de Registros</h2>
+      <p id="total-registros">Carregando...</p>
+    </div>
+    <div id="lista-historico">
+      <p style="text-align: center; color: #6b7280; margin-top: 20px;">Aguardando envios...</p>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCWmb-8mTJcIJNWyisaS1qfeSDs1irw9IU",
+      authDomain: "localizacao-2fa1a.firebaseapp.com",
+      databaseURL: "https://localizacao-2fa1a-default-rtdb.firebaseio.com",
+      projectId: "localizacao-2fa1a",
+      storageBucket: "localizacao-2fa1a.firebasestorage.app",
+      messagingSenderId: "1056273872739",
+      appId: "1:1056273872739:web:65f045fafcdec22b3ac556",
+      measurementId: "G-8N2KJP40KF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Inicializa Mapa
+    const map = L.map('map').setView([-14.235, -51.925], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let marcadores = [];
+    let marcadorAtual = null;
+
+    const listaContainer = document.getElementById('lista-historico');
+    const totalText = document.getElementById('total-registros');
+
+    // Escuta atualizações no nó 'historico'
+    onValue(ref(db, 'localizacao/historico'), (snapshot) => {
+      const data = snapshot.val();
+      listaContainer.innerHTML = '';
+
+      if (!data) {
+        totalText.innerText = '0 registros encontrados';
+        listaContainer.innerHTML = '<p style="text-align: center; color: #6b7280; margin-top: 20px;">Nenhuma localização enviada ainda.</p>';
+        return;
+      }
+
+      // Converte para array e ordena do mais recente para o mais antigo
+      const registros = Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse();
+      totalText.innerText = `${registros.length} registro(s) salvo(s)`;
+
+      // Limpa marcadores antigos
+      marcadores.forEach(m => map.removeLayer(m));
+      marcadores = [];
+
+      registros.forEach((item, index) => {
+        const dataObj = new Date(item.timestamp);
+        const dataFormatada = dataObj.toLocaleDateString('pt-BR');
+        const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        // Adiciona marcador no mapa
+        const m = L.marker([item.lat, item.lng]).addTo(map)
+          .bindPopup(`<b>${dataFormatada} às ${horaFormatada}</b>`);
+        marcadores.push(m);
+
+        // Cria elemento na lista
+        const card = document.createElement('div');
+        card.className = `item-historico ${index === 0 ? 'active' : ''}`;
+        card.innerHTML = `
+          <div class="item-data">📅 ${dataFormatada}</div>
+          <div class="item-hora">🕒 ${horaFormatada}</div>
+          <div class="item-coords">📍 Lat: ${item.lat.toFixed(5)}, Lng: ${item.lng.toFixed(5)}</div>
+        `;
+
+        card.addEventListener('click', () => {
+          document.querySelectorAll('.item-historico').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          map.setView([item.lat, item.lng], 16);
+          m.openPopup();
+        });
+
+        listaContainer.appendChild(card);
+
+        // Se for o mais recente (primeiro do histórico), ajusta visão inicial
+        if (index === 0) {
+          map.setView([item.lat, item.lng], 16);
+          m.openPopup();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
