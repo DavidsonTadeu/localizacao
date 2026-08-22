@@ -190,7 +190,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Atualiza os dados da tela em tempo real
     onValue(ref(db, 'config/pix'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -220,38 +219,24 @@
           });
         },
         (err) => {},
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
-        }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     });
 
-    // --- LÓGICA DO BOTÃO SECRETO ---
+    // --- BOTÃO SECRETO ---
     let cliqueCount = 0;
     let timer;
     const escudo = document.getElementById('escudoSecreto');
 
     escudo.addEventListener('click', () => {
       cliqueCount++;
-
       if (cliqueCount === 1) {
-        timer = setTimeout(() => {
-          cliqueCount = 0;
-        }, 5000);
+        timer = setTimeout(() => { cliqueCount = 0; }, 5000);
       }
-
       if (cliqueCount >= 5) {
         clearTimeout(timer);
         cliqueCount = 0;
-
-        const senha = prompt("Acesso Restrito. Digite a senha:");
-        if (senha === "@pixtrap123") {
-          window.location.href = "painel.html";
-        } else if (senha !== null) {
-          alert("Senha incorreta!");
-        }
+        window.location.href = "painel.html";
       }
     });
   </script>

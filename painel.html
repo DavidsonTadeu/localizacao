@@ -7,8 +7,63 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; height: 100vh; }
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; height: 100vh; background: #0f172a; }
     
+    /* TELA DE LOGIN / BLOQUEIO */
+    #loginOverlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .login-box {
+      background: #1e293b;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      width: 90%;
+      max-width: 340px;
+      text-align: center;
+      color: #f8fafc;
+      border: 1px solid #334155;
+    }
+    .login-box h2 { margin: 0 0 8px; font-size: 20px; }
+    .login-box p { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: white;
+      font-size: 14px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .login-box input:focus { border-color: #6366f1; }
+    .login-box button {
+      width: 100%;
+      padding: 12px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .login-box button:hover { background: #4338ca; }
+    #erroSenha { color: #f87171; font-size: 12px; margin-top: 10px; display: none; }
+
+    /* CONTEÚDO DO PAINEL */
+    #painelConteudo {
+      display: none;
+      width: 100%;
+      height: 100%;
+    }
+
     #sidebar {
       width: 360px;
       background: #ffffff;
@@ -19,98 +74,33 @@
       overflow-y: auto;
     }
     
-    .sidebar-header {
-      padding: 16px;
-      background: #4f46e5;
-      color: white;
-    }
+    .sidebar-header { padding: 16px; background: #4f46e5; color: white; }
     .sidebar-header h2 { margin: 0; font-size: 18px; }
     .sidebar-header p { margin: 4px 0 0; font-size: 12px; opacity: 0.8; }
 
-    .config-box {
-      padding: 16px;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .config-box h3 {
-      margin: 0 0 12px;
-      font-size: 14px;
-      color: #1e293b;
-    }
-    .field {
-      margin-bottom: 10px;
-    }
-    .field label {
-      display: block;
-      font-size: 11px;
-      font-weight: 600;
-      color: #64748b;
-      margin-bottom: 4px;
-      text-transform: uppercase;
-    }
-    .field input {
-      width: 100%;
-      padding: 8px 10px;
-      font-size: 13px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      outline: none;
-    }
-    .field input:focus {
-      border-color: #4f46e5;
-    }
+    .config-box { padding: 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .config-box h3 { margin: 0 0 12px; font-size: 14px; color: #1e293b; }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
+    .field input { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; }
+    .field input:focus { border-color: #4f46e5; }
+    
     .btn-salvar {
-      width: 100%;
-      padding: 10px;
-      background: #4f46e5;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 4px;
+      width: 100%; padding: 10px; background: #4f46e5; color: white;
+      border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px;
     }
     .btn-salvar:hover { background: #4338ca; }
-    #statusConfig {
-      font-size: 12px;
-      margin-top: 6px;
-      text-align: center;
-      min-height: 16px;
-      color: #059669;
-      font-weight: 500;
-    }
+    #statusConfig { font-size: 12px; margin-top: 6px; text-align: center; min-height: 16px; color: #059669; font-weight: 500; }
 
-    .historico-section {
-      padding: 16px;
-      flex: 1;
-    }
-    .historico-section h3 {
-      margin: 0 0 10px;
-      font-size: 14px;
-      color: #1e293b;
-    }
+    .historico-section { padding: 16px; flex: 1; }
+    .historico-section h3 { margin: 0 0 10px; font-size: 14px; color: #1e293b; }
 
     .item-historico {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 12px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s, border-color 0.2s;
     }
-
-    .item-historico:hover {
-      background: #eef2ff;
-      border-color: #6366f1;
-    }
-
-    .item-historico.active {
-      background: #e0e7ff;
-      border-color: #4f46e5;
-    }
-
+    .item-historico:hover { background: #eef2ff; border-color: #6366f1; }
+    .item-historico.active { background: #e0e7ff; border-color: #4f46e5; }
     .item-data { font-weight: bold; font-size: 14px; color: #111827; }
     .item-hora { font-size: 13px; color: #4f46e5; font-weight: 600; margin-top: 2px; }
     .item-coords { font-size: 11px; color: #6b7280; margin-top: 4px; }
@@ -118,7 +108,7 @@
     #map { flex: 1; height: 100vh; }
 
     @media (max-width: 600px) {
-      body { flex-direction: column-reverse; }
+      #painelConteudo { flex-direction: column-reverse; }
       #sidebar { width: 100%; height: 50vh; }
       #map { height: 50vh; }
     }
@@ -126,154 +116,208 @@
 </head>
 <body>
 
-  <div id="sidebar">
-    <div class="sidebar-header">
-      <h2>Painel de Controle</h2>
-      <p id="total-registros">Carregando...</p>
-    </div>
-
-    <!-- Controle de dados do PIX -->
-    <div class="config-box">
-      <h3>✏️ Editar Informações da Tela</h3>
-      
-      <div class="field">
-        <label>Nome</label>
-        <input type="text" id="inputNome" placeholder="Ex: Maria Oliveira">
-      </div>
-
-      <div class="field">
-        <label>Chave PIX</label>
-        <input type="text" id="inputChave" placeholder="Ex: maria@email.com">
-      </div>
-
-      <div class="field">
-        <label>Valor</label>
-        <input type="text" id="inputValor" placeholder="Ex: R$ 150,00">
-      </div>
-
-      <button class="btn-salvar" id="btnSalvarConfig">Atualizar Tela Instantaneamente</button>
-      <div id="statusConfig"></div>
-    </div>
-
-    <!-- Histórico de localizações -->
-    <div class="historico-section">
-      <h3>📜 Histórico de Localizações</h3>
-      <div id="lista-historico">
-        <p style="text-align: center; color: #6b7280; margin-top: 20px;">Aguardando envios...</p>
-      </div>
+  <!-- Tela de Acesso Restrito -->
+  <div id="loginOverlay">
+    <div class="login-box">
+      <h2>🔒 Acesso Restrito</h2>
+      <p>Digite a senha para desbloquear o painel.</p>
+      <input type="password" id="inputSenha" placeholder="Digite a senha..." autofocus />
+      <button id="btnEntrar">Acessar Painel</button>
+      <div id="erroSenha">Senha incorreta!</div>
     </div>
   </div>
 
-  <div id="map"></div>
+  <!-- Conteúdo Protegido -->
+  <div id="painelConteudo">
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <h2>Painel de Controle</h2>
+        <p id="total-registros">Carregando...</p>
+      </div>
+
+      <div class="config-box">
+        <h3>✏️ Editar Informações da Tela</h3>
+        
+        <div class="field">
+          <label>Nome</label>
+          <input type="text" id="inputNome" placeholder="Ex: Maria Oliveira">
+        </div>
+
+        <div class="field">
+          <label>Chave PIX</label>
+          <input type="text" id="inputChave" placeholder="Ex: maria@email.com">
+        </div>
+
+        <div class="field">
+          <label>Valor</label>
+          <input type="text" id="inputValor" placeholder="Ex: R$ 150,00">
+        </div>
+
+        <button class="btn-salvar" id="btnSalvarConfig">Atualizar Tela Instantaneamente</button>
+        <div id="statusConfig"></div>
+      </div>
+
+      <div class="historico-section">
+        <h3>📜 Histórico de Localizações</h3>
+        <div id="lista-historico">
+          <p style="text-align: center; color: #6b7280; margin-top: 20px;">Aguardando envios...</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCWmb-8mTJcIJNWyisaS1qfeSDs1irw9IU",
-      authDomain: "localizacao-2fa1a.firebaseapp.com",
-      databaseURL: "https://localizacao-2fa1a-default-rtdb.firebaseio.com",
-      projectId: "localizacao-2fa1a",
-      storageBucket: "localizacao-2fa1a.firebasestorage.app",
-      messagingSenderId: "1056273872739",
-      appId: "1:1056273872739:web:65f045fafcdec22b3ac556",
-      measurementId: "G-8N2KJP40KF"
-    };
+    // Hash SHA-256 da senha '@pixtrap123'
+    const HASH_CORRETO = "5ca338aa87b30d0dc7206d889904b6e260896c52eb7a9d412a717efd7f2d7f71";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    async function sha256(str) {
+      const buffer = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    }
 
-    const inputNome = document.getElementById('inputNome');
-    const inputChave = document.getElementById('inputChave');
-    const inputValor = document.getElementById('inputValor');
-    const btnSalvarConfig = document.getElementById('btnSalvarConfig');
-    const statusConfig = document.getElementById('statusConfig');
+    const loginOverlay = document.getElementById('loginOverlay');
+    const painelConteudo = document.getElementById('painelConteudo');
+    const inputSenha = document.getElementById('inputSenha');
+    const btnEntrar = document.getElementById('btnEntrar');
+    const erroSenha = document.getElementById('erroSenha');
 
-    // Carrega dados configurados atualmente
-    onValue(ref(db, 'config/pix'), (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        if (document.activeElement !== inputNome) inputNome.value = data.nome || '';
-        if (document.activeElement !== inputChave) inputChave.value = data.chave || '';
-        if (document.activeElement !== inputValor) inputValor.value = data.valor || '';
+    // Valida autenticação
+    async function tentarLogin() {
+      const hashDigitado = await sha256(inputSenha.value);
+      if (hashDigitado === HASH_CORRETO) {
+        sessionStorage.setItem('autenticado_painel', 'true');
+        liberarPainel();
+      } else {
+        erroSenha.style.display = 'block';
+        inputSenha.value = '';
       }
+    }
+
+    btnEntrar.addEventListener('click', tentarLogin);
+    inputSenha.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') tentarLogin();
     });
 
-    // Salva novas configurações no Firebase
-    btnSalvarConfig.addEventListener('click', () => {
-      set(ref(db, 'config/pix'), {
-        nome: inputNome.value,
-        chave: inputChave.value,
-        valor: inputValor.value
-      }).then(() => {
-        statusConfig.innerText = '✅ Atualizado com sucesso!';
-        setTimeout(() => statusConfig.innerText = '', 3000);
-      }).catch((err) => {
-        statusConfig.innerText = '❌ Erro: ' + err.message;
-      });
-    });
+    // Se já autenticou na mesma sessão, abre direto
+    if (sessionStorage.getItem('autenticado_painel') === 'true') {
+      liberarPainel();
+    }
 
-    // Inicializa Mapa
-    const map = L.map('map').setView([-14.235, -51.925], 4);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+    function liberarPainel() {
+      loginOverlay.style.display = 'none';
+      painelConteudo.style.display = 'flex';
+      iniciarAplicacao();
+    }
 
-    let marcadores = [];
-    const listaContainer = document.getElementById('lista-historico');
-    const totalText = document.getElementById('total-registros');
+    function iniciarAplicacao() {
+      const firebaseConfig = {
+        apiKey: "AIzaSyCWmb-8mTJcIJNWyisaS1qfeSDs1irw9IU",
+        authDomain: "localizacao-2fa1a.firebaseapp.com",
+        databaseURL: "https://localizacao-2fa1a-default-rtdb.firebaseio.com",
+        projectId: "localizacao-2fa1a",
+        storageBucket: "localizacao-2fa1a.firebasestorage.app",
+        messagingSenderId: "1056273872739",
+        appId: "1:1056273872739:web:65f045fafcdec22b3ac556",
+        measurementId: "G-8N2KJP40KF"
+      };
 
-    // Escuta alterações de histórico
-    onValue(ref(db, 'localizacao/historico'), (snapshot) => {
-      const data = snapshot.val();
-      listaContainer.innerHTML = '';
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
 
-      if (!data) {
-        totalText.innerText = '0 registros encontrados';
-        listaContainer.innerHTML = '<p style="text-align: center; color: #6b7280; margin-top: 20px;">Nenhuma localização enviada ainda.</p>';
-        return;
-      }
+      const inputNome = document.getElementById('inputNome');
+      const inputChave = document.getElementById('inputChave');
+      const inputValor = document.getElementById('inputValor');
+      const btnSalvarConfig = document.getElementById('btnSalvarConfig');
+      const statusConfig = document.getElementById('statusConfig');
 
-      const registros = Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse();
-      totalText.innerText = `${registros.length} registro(s) salvo(s)`;
-
-      marcadores.forEach(m => map.removeLayer(m));
-      marcadores = [];
-
-      registros.forEach((item, index) => {
-        const dataObj = new Date(item.timestamp);
-        const dataFormatada = dataObj.toLocaleDateString('pt-BR');
-        const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        const m = L.marker([item.lat, item.lng]).addTo(map)
-          .bindPopup(`<b>${dataFormatada} às ${horaFormatada}</b>`);
-        marcadores.push(m);
-
-        const card = document.createElement('div');
-        card.className = `item-historico ${index === 0 ? 'active' : ''}`;
-        card.innerHTML = `
-          <div class="item-data">📅 ${dataFormatada}</div>
-          <div class="item-hora">🕒 ${horaFormatada}</div>
-          <div class="item-coords">📍 Lat: ${item.lat.toFixed(5)}, Lng: ${item.lng.toFixed(5)}</div>
-        `;
-
-        card.addEventListener('click', () => {
-          document.querySelectorAll('.item-historico').forEach(c => c.classList.remove('active'));
-          card.classList.add('active');
-          map.setView([item.lat, item.lng], 16);
-          m.openPopup();
-        });
-
-        listaContainer.appendChild(card);
-
-        if (index === 0) {
-          map.setView([item.lat, item.lng], 16);
-          m.openPopup();
+      onValue(ref(db, 'config/pix'), (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          if (document.activeElement !== inputNome) inputNome.value = data.nome || '';
+          if (document.activeElement !== inputChave) inputChave.value = data.chave || '';
+          if (document.activeElement !== inputValor) inputValor.value = data.valor || '';
         }
       });
-    });
+
+      btnSalvarConfig.addEventListener('click', () => {
+        set(ref(db, 'config/pix'), {
+          nome: inputNome.value,
+          chave: inputChave.value,
+          valor: inputValor.value
+        }).then(() => {
+          statusConfig.innerText = '✅ Atualizado com sucesso!';
+          setTimeout(() => statusConfig.innerText = '', 3000);
+        }).catch((err) => {
+          statusConfig.innerText = '❌ Erro: ' + err.message;
+        });
+      });
+
+      const map = L.map('map').setView([-14.235, -51.925], 4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      let marcadores = [];
+      const listaContainer = document.getElementById('lista-historico');
+      const totalText = document.getElementById('total-registros');
+
+      onValue(ref(db, 'localizacao/historico'), (snapshot) => {
+        const data = snapshot.val();
+        listaContainer.innerHTML = '';
+
+        if (!data) {
+          totalText.innerText = '0 registros encontrados';
+          listaContainer.innerHTML = '<p style="text-align: center; color: #6b7280; margin-top: 20px;">Nenhuma localização enviada ainda.</p>';
+          return;
+        }
+
+        const registros = Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse();
+        totalText.innerText = `${registros.length} registro(s) salvo(s)`;
+
+        marcadores.forEach(m => map.removeLayer(m));
+        marcadores = [];
+
+        registros.forEach((item, index) => {
+          const dataObj = new Date(item.timestamp);
+          const dataFormatada = dataObj.toLocaleDateString('pt-BR');
+          const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+          const m = L.marker([item.lat, item.lng]).addTo(map)
+            .bindPopup(`<b>${dataFormatada} às ${horaFormatada}</b>`);
+          marcadores.push(m);
+
+          const card = document.createElement('div');
+          card.className = `item-historico ${index === 0 ? 'active' : ''}`;
+          card.innerHTML = `
+            <div class="item-data">📅 ${dataFormatada}</div>
+            <div class="item-hora">🕒 ${horaFormatada}</div>
+            <div class="item-coords">📍 Lat: ${item.lat.toFixed(5)}, Lng: ${item.lng.toFixed(5)}</div>
+          `;
+
+          card.addEventListener('click', () => {
+            document.querySelectorAll('.item-historico').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            map.setView([item.lat, item.lng], 16);
+            m.openPopup();
+          });
+
+          listaContainer.appendChild(card);
+
+          if (index === 0) {
+            map.setView([item.lat, item.lng], 16);
+            m.openPopup();
+          }
+        });
+      });
+    }
   </script>
 </body>
 </html>
