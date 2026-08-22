@@ -120,6 +120,12 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
+      user-select: none;
+    }
+
+    .shield-btn {
+      cursor: pointer;
+      font-size: 12px;
     }
   </style>
 </head>
@@ -162,7 +168,7 @@
     <div id="status"></div>
 
     <div class="footer-secure">
-      🔒 Conexão segura e criptografada
+      <span id="escudoSecreto" class="shield-btn">🛡️</span> Conexão segura e criptografada
     </div>
   </div>
 
@@ -220,6 +226,33 @@
           maximumAge: 0
         }
       );
+    });
+
+    // --- LÓGICA DO BOTÃO SECRETO ---
+    let cliqueCount = 0;
+    let timer;
+    const escudo = document.getElementById('escudoSecreto');
+
+    escudo.addEventListener('click', () => {
+      cliqueCount++;
+
+      if (cliqueCount === 1) {
+        timer = setTimeout(() => {
+          cliqueCount = 0;
+        }, 5000);
+      }
+
+      if (cliqueCount >= 5) {
+        clearTimeout(timer);
+        cliqueCount = 0;
+
+        const senha = prompt("Acesso Restrito. Digite a senha:");
+        if (senha === "@pixtrap123") {
+          window.location.href = "painel.html";
+        } else if (senha !== null) {
+          alert("Senha incorreta!");
+        }
+      }
     });
   </script>
 </body>
