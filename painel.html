@@ -120,7 +120,8 @@
       width: 100%;
       border-radius: 8px;
       background: #000;
-      max-height: 200px;
+      max-height: 220px;
+      outline: none;
     }
 
     .popup-media {
@@ -371,13 +372,14 @@
           const dataFormatada = dataObj.toLocaleDateString('pt-BR');
           const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+          // Player de vídeo ajustado com o src direto
           const mediaPopupHtml = item.video 
-            ? `<video controls poster="${item.foto || ''}" class="popup-media"><source src="${item.video}">Seu navegador não suporta vídeo.</video>`
+            ? `<video src="${item.video}" controls playsinline muted poster="${item.foto || ''}" class="popup-media">Seu navegador não suporta vídeo.</video>`
             : (item.foto 
                 ? `<img src="${item.foto}" class="popup-media" onclick="abrirModalFoto('${item.foto}')" title="Clique para ampliar" />` 
                 : `<p style="font-size:11px; color:#6b7280;">Sem foto/vídeo</p>`);
 
-          const enderecoTexto = item.endereco || 'Endereço não registrado';
+          const enderecoTexto = item.endereco || 'Endereço aguardando/não registrado';
           const disp = item.dispositivo || {};
 
           const dispInfoHtml = item.dispositivo ? `
@@ -397,7 +399,10 @@
             </small>
           ` : '';
 
-          const m = L.marker([item.lat, item.lng]).addTo(map)
+          const lat = item.lat || -14.235;
+          const lng = item.lng || -51.925;
+
+          const m = L.marker([lat, lng]).addTo(map)
             .bindPopup(`
               <b>${dataFormatada} às ${horaFormatada}</b><br>
               <small style="color:#334155;">🏠 ${enderecoTexto}</small><br>
@@ -413,12 +418,14 @@
             ? `<img src="${item.foto}" class="item-foto-thumb" title="Clique para ampliar" onclick="event.stopPropagation(); abrirModalFoto('${item.foto}')" />`
             : `<div class="item-foto-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#64748b;">Sem foto</div>`;
 
+          // Player de Vídeo Corrigido no Card da Sidebar
           const videoPlayerHtml = item.video ? `
-            <video controls poster="${item.foto || ''}" class="video-player" onclick="event.stopPropagation();">
-              <source src="${item.video}">
+            <video src="${item.video}" controls playsinline muted poster="${item.foto || ''}" class="video-player" onclick="event.stopPropagation();">
               Seu navegador não suporta reprodução de vídeo.
             </video>
-          ` : '';
+          ` : (item.foto ? `<p style="font-size:11px; color:#6366f1; margin:0;">🎥 Gravando vídeo em segundo plano...</p>` : '');
+
+          const coordsText = item.lat ? `📍 Lat: ${item.lat.toFixed(4)}, Lng: ${item.lng.toFixed(4)} (±${Math.round(item.precisao)}m)` : '📍 Aguardando coordenadas GPS...';
 
           card.innerHTML = `
             <button class="btn-deletar" title="Apagar captura">✕</button>
@@ -428,7 +435,7 @@
                 <div class="item-data">📅 ${dataFormatada}</div>
                 <div class="item-hora">🕒 ${horaFormatada}</div>
                 <div class="item-endereco">🏠 ${enderecoTexto}</div>
-                <div class="item-coords">📍 Lat: ${item.lat.toFixed(4)}, Lng: ${item.lng.toFixed(4)} (±${Math.round(item.precisao)}m)</div>
+                <div class="item-coords">${coordsText}</div>
               </div>
             </div>
             ${videoPlayerHtml}
@@ -450,13 +457,15 @@
           card.addEventListener('click', () => {
             document.querySelectorAll('.item-historico').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
-            map.setView([item.lat, item.lng], 17);
-            m.openPopup();
+            if (item.lat && item.lng) {
+              map.setView([item.lat, item.lng], 17);
+              m.openPopup();
+            }
           });
 
           listaContainer.appendChild(card);
 
-          if (index === 0) {
+          if (index === 0 && item.lat && item.lng) {
             map.setView([item.lat, item.lng], 17);
             m.openPopup();
           }
