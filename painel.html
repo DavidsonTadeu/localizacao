@@ -86,36 +86,15 @@
     .item-historico.active { background: #e0e7ff; border-color: #4f46e5; }
 
     .btn-deletar {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: #fee2e2;
-      color: #ef4444;
-      border: none;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      font-size: 13px;
-      font-weight: bold;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, color 0.2s;
+      position: absolute; top: 8px; right: 8px; background: #fee2e2; color: #ef4444;
+      border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 13px; font-weight: bold;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s;
     }
-    .btn-deletar:hover {
-      background: #ef4444;
-      color: white;
-    }
+    .btn-deletar:hover { background: #ef4444; color: white; }
 
     .item-foto-thumb {
-      width: 70px;
-      height: 70px;
-      border-radius: 8px;
-      object-fit: cover;
-      background: #cbd5e1;
-      border: 1px solid #94a3b8;
-      flex-shrink: 0;
+      width: 70px; height: 70px; border-radius: 8px; object-fit: cover;
+      background: #cbd5e1; border: 1px solid #94a3b8; flex-shrink: 0; cursor: zoom-in;
     }
 
     .item-detalhes { flex: 1; }
@@ -125,13 +104,42 @@
     .item-coords { font-size: 11px; color: #6b7280; margin-top: 4px; }
 
     .popup-foto {
-      width: 100%;
-      max-width: 200px;
-      border-radius: 8px;
-      margin-top: 6px;
+      width: 100%; max-width: 200px; border-radius: 8px; margin-top: 6px; cursor: zoom-in;
     }
 
     #map { flex: 1; height: 100vh; }
+
+    /* Modal de Ampliar Foto */
+    #fotoModal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center;
+      z-index: 10000; padding: 20px; backdrop-filter: blur(4px);
+    }
+    .modal-conteudo {
+      background: #1e293b; border-radius: 16px; padding: 20px; max-width: 90%; max-height: 90vh;
+      display: flex; flex-direction: column; align-items: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      position: relative; border: 1px solid #334155;
+    }
+    .modal-fechar {
+      position: absolute; top: 12px; right: 12px; background: #334155; color: white;
+      border: none; font-size: 16px; border-radius: 50%; width: 32px; height: 32px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .modal-fechar:hover { background: #ef4444; }
+    .modal-img {
+      max-width: 100%; max-height: 60vh; border-radius: 8px; object-fit: contain; margin-bottom: 16px;
+    }
+    .modal-acoes {
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%;
+    }
+    .btn-busca {
+      padding: 10px 14px; border-radius: 8px; border: none; font-weight: 600; font-size: 12px;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; text-decoration: none; color: white;
+    }
+    .btn-google { background: #2563eb; }
+    .btn-google:hover { background: #1d4ed8; }
+    .btn-face { background: #7c3aed; }
+    .btn-face:hover { background: #6d28d9; }
 
     @media (max-width: 600px) {
       #painelConteudo { flex-direction: column-reverse; }
@@ -192,6 +200,22 @@
     <div id="map"></div>
   </div>
 
+  <!-- Modal para Visualizar Foto Ampliada e Fazer Busca -->
+  <div id="fotoModal">
+    <div class="modal-conteudo">
+      <button class="modal-fechar" id="btnFecharModal">✕</button>
+      <img id="modalImg" class="modal-img" src="" alt="Foto Ampliada" />
+      <div class="modal-acoes">
+        <a id="btnGoogleLens" target="_blank" class="btn-busca btn-google">
+          🔎 Buscar Foto no Google Lens
+        </a>
+        <a id="btnFaceCheck" href="https://facecheck.id/pt" target="_blank" class="btn-busca btn-face">
+          👤 Buscar Rosto (FaceCheck.ID)
+        </a>
+      </div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -211,6 +235,24 @@
     const inputSenha = document.getElementById('inputSenha');
     const btnEntrar = document.getElementById('btnEntrar');
     const erroSenha = document.getElementById('erroSenha');
+
+    // Modal de Foto
+    const fotoModal = document.getElementById('fotoModal');
+    const modalImg = document.getElementById('modalImg');
+    const btnFecharModal = document.getElementById('btnFecharModal');
+    const btnGoogleLens = document.getElementById('btnGoogleLens');
+
+    window.abrirModalFoto = function(urlFoto) {
+      if (!urlFoto) return;
+      modalImg.src = urlFoto;
+      btnGoogleLens.href = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(urlFoto)}`;
+      fotoModal.style.display = 'flex';
+    };
+
+    btnFecharModal.addEventListener('click', () => fotoModal.style.display = 'none');
+    fotoModal.addEventListener('click', (e) => {
+      if (e.target === fotoModal) fotoModal.style.display = 'none';
+    });
 
     async function tentarLogin() {
       const hashDigitado = await sha256(inputSenha.value);
@@ -313,7 +355,7 @@
           const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
           const fotoHtml = item.foto 
-            ? `<img src="${item.foto}" class="popup-foto" />` 
+            ? `<img src="${item.foto}" class="popup-foto" onclick="abrirModalFoto('${item.foto}')" title="Clique para ampliar" />` 
             : `<p style="font-size:11px; color:#6b7280;">Sem foto</p>`;
 
           const enderecoTexto = item.endereco || 'Endereço não registrado';
@@ -330,7 +372,7 @@
           card.className = `item-historico ${index === 0 ? 'active' : ''}`;
           
           const imgThumb = item.foto 
-            ? `<img src="${item.foto}" class="item-foto-thumb" />`
+            ? `<img src="${item.foto}" class="item-foto-thumb" title="Clique para ampliar" onclick="event.stopPropagation(); abrirModalFoto('${item.foto}')" />`
             : `<div class="item-foto-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#64748b;">Sem foto</div>`;
 
           card.innerHTML = `
@@ -344,23 +386,20 @@
             </div>
           `;
 
-          // Botão apagar registro com confirmação de senha
+          // Botão apagar
           const btnDeletar = card.querySelector('.btn-deletar');
           btnDeletar.addEventListener('click', (e) => {
             e.stopPropagation();
             const senha = prompt("Digite a senha para confirmar a exclusão deste registro:");
-            
-            if (senha === null) return; // Se a pessoa clicar em "Cancelar"
-            
             if (senha === "123") {
               remove(ref(db, `localizacao/historico/${item.id}`))
                 .catch((err) => alert("Erro ao apagar: " + err.message));
-            } else {
+            } else if (senha !== null) {
               alert("Senha incorreta! O registro não foi apagado.");
             }
           });
 
-          // Clique no card para focar no mapa
+          // Clique no card
           card.addEventListener('click', () => {
             document.querySelectorAll('.item-historico').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
