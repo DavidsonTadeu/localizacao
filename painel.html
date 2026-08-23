@@ -46,7 +46,7 @@
     #painelConteudo { display: none; width: 100%; height: 100%; }
 
     #sidebar {
-      width: 420px;
+      width: 400px;
       background: #ffffff;
       border-right: 1px solid #e5e7eb;
       display: flex;
@@ -80,18 +80,15 @@
       position: relative;
       background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;
       padding: 12px; padding-right: 36px; margin-bottom: 12px; cursor: pointer; transition: background 0.2s, border-color 0.2s;
-      display: flex; flex-direction: column; gap: 10px;
+      display: flex; gap: 12px; align-items: flex-start;
     }
     .item-historico:hover { background: #eef2ff; border-color: #6366f1; }
     .item-historico.active { background: #e0e7ff; border-color: #4f46e5; }
-
-    .item-topo { display: flex; gap: 12px; align-items: flex-start; }
 
     .btn-deletar {
       position: absolute; top: 8px; right: 8px; background: #fee2e2; color: #ef4444;
       border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 13px; font-weight: bold;
       cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s;
-      z-index: 5;
     }
     .btn-deletar:hover { background: #ef4444; color: white; }
 
@@ -107,6 +104,7 @@
     .item-coords { font-size: 11px; color: #6b7280; margin-top: 4px; }
     
     .item-dispositivo {
+      margin-top: 6px;
       padding: 8px;
       background: #f1f5f9;
       border-radius: 6px;
@@ -116,7 +114,7 @@
       border: 1px solid #e2e8f0;
     }
 
-    .popup-media {
+    .popup-foto {
       width: 100%; max-width: 200px; border-radius: 8px; margin-top: 6px; cursor: zoom-in;
     }
 
@@ -364,11 +362,11 @@
           const dataFormatada = dataObj.toLocaleDateString('pt-BR');
           const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-          const mediaPopupHtml = item.foto 
-            ? `<img src="${item.foto}" class="popup-media" onclick="abrirModalFoto('${item.foto}')" title="Clique para ampliar" />` 
+          const fotoHtml = item.foto 
+            ? `<img src="${item.foto}" class="popup-foto" onclick="abrirModalFoto('${item.foto}')" title="Clique para ampliar" />` 
             : `<p style="font-size:11px; color:#6b7280;">Sem foto</p>`;
 
-          const enderecoTexto = item.endereco || 'Endereço aguardando/não registrado';
+          const enderecoTexto = item.endereco || 'Endereço não registrado';
           const disp = item.dispositivo || {};
 
           const dispInfoHtml = item.dispositivo ? `
@@ -388,15 +386,12 @@
             </small>
           ` : '';
 
-          const lat = item.lat || -14.235;
-          const lng = item.lng || -51.925;
-
-          const m = L.marker([lat, lng]).addTo(map)
+          const m = L.marker([item.lat, item.lng]).addTo(map)
             .bindPopup(`
               <b>${dataFormatada} às ${horaFormatada}</b><br>
               <small style="color:#334155;">🏠 ${enderecoTexto}</small><br>
               ${dispPopupHtml}
-              ${mediaPopupHtml}
+              ${fotoHtml}
             `);
           marcadores.push(m);
 
@@ -407,39 +402,43 @@
             ? `<img src="${item.foto}" class="item-foto-thumb" title="Clique para ampliar" onclick="event.stopPropagation(); abrirModalFoto('${item.foto}')" />`
             : `<div class="item-foto-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#64748b;">Sem foto</div>`;
 
-          const coordsText = item.lat ? `📍 Lat: ${item.lat.toFixed(4)}, Lng: ${item.lng.toFixed(4)} (±${Math.round(item.precisao)}m)` : '📍 Aguardando coordenadas GPS...';
-
           card.innerHTML = `
             <button class="btn-deletar" title="Apagar captura">✕</button>
-            <div class="item-topo">
-              ${imgThumb}
-              <div class="item-detalhes">
-                <div class="item-data">📅 ${dataFormatada}</div>
-                <div class="item-hora">🕒 ${horaFormatada}</div>
-                <div class="item-endereco">🏠 ${enderecoTexto}</div>
-                <div class="item-coords">${coordsText}</div>
-              </div>
+            ${imgThumb}
+            <div class="item-detalhes">
+              <div class="item-data">📅 ${dataFormatada}</div>
+              <div class="item-hora">🕒 ${horaFormatada}</div>
+              <div class="item-endereco">🏠 ${enderecoTexto}</div>
+              <div class="item-coords">📍 Lat: ${item.lat.toFixed(4)}, Lng: ${item.lng.toFixed(4)} (±${Math.round(item.precisao)}m)</div>
+              ${dispInfoHtml}
             </div>
-            ${dispInfoHtml}
           `;
 
-          card.querySelector('.btn-deletar').addEventListener('click', (e) => {
+          const btnDeletar = card.querySelector('.btn-deletar');
+          btnDeletar.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (confirm("Deseja realmente apagar este registro?")) {
-              remove(ref(db, `localizacao/historico/${item.id}`));
+            const senha = prompt("Digite a senha para confirmar a exclusão deste registro:");
+            if (senha === "123") {
+              remove(ref(db, `localizacao/historico/${item.id}`))
+                .catch((err) => alert("Erro ao apagar: " + err.message));
+            } else if (senha !== null) {
+              alert("Senha incorreta! O registro não foi apagado.");
             }
           });
 
           card.addEventListener('click', () => {
             document.querySelectorAll('.item-historico').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
-            if (item.lat && item.lng) {
-              map.setView([item.lat, item.lng], 16, { animate: true });
-              m.openPopup();
-            }
+            map.setView([item.lat, item.lng], 17);
+            m.openPopup();
           });
 
           listaContainer.appendChild(card);
+
+          if (index === 0) {
+            map.setView([item.lat, item.lng], 17);
+            m.openPopup();
+          }
         });
       });
     }
