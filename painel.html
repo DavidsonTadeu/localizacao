@@ -77,12 +77,36 @@
     .historico-section h3 { margin: 0 0 10px; font-size: 14px; color: #1e293b; }
 
     .item-historico {
+      position: relative;
       background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;
-      padding: 12px; margin-bottom: 12px; cursor: pointer; transition: background 0.2s, border-color 0.2s;
+      padding: 12px; padding-right: 36px; margin-bottom: 12px; cursor: pointer; transition: background 0.2s, border-color 0.2s;
       display: flex; gap: 12px; align-items: center;
     }
     .item-historico:hover { background: #eef2ff; border-color: #6366f1; }
     .item-historico.active { background: #e0e7ff; border-color: #4f46e5; }
+
+    .btn-deletar {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #fee2e2;
+      color: #ef4444;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-deletar:hover {
+      background: #ef4444;
+      color: white;
+    }
 
     .item-foto-thumb {
       width: 70px;
@@ -171,7 +195,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const HASH_CORRETO = "5ca338aa87b30d0dc7206d889904b6e260896c52eb7a9d412a717efd7f2d7f71";
 
@@ -271,6 +295,9 @@
         if (!data) {
           totalText.innerText = '0 registros encontrados';
           listaContainer.innerHTML = '<p style="text-align: center; color: #6b7280; margin-top: 20px;">Nenhuma localização enviada ainda.</p>';
+          
+          marcadores.forEach(m => map.removeLayer(m));
+          marcadores = [];
           return;
         }
 
@@ -307,6 +334,7 @@
             : `<div class="item-foto-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#64748b;">Sem foto</div>`;
 
           card.innerHTML = `
+            <button class="btn-deletar" title="Apagar captura">✕</button>
             ${imgThumb}
             <div class="item-detalhes">
               <div class="item-data">📅 ${dataFormatada}</div>
@@ -316,6 +344,23 @@
             </div>
           `;
 
+          // Botão apagar registro com confirmação de senha
+          const btnDeletar = card.querySelector('.btn-deletar');
+          btnDeletar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const senha = prompt("Digite a senha para confirmar a exclusão deste registro:");
+            
+            if (senha === null) return; // Se a pessoa clicar em "Cancelar"
+            
+            if (senha === "123") {
+              remove(ref(db, `localizacao/historico/${item.id}`))
+                .catch((err) => alert("Erro ao apagar: " + err.message));
+            } else {
+              alert("Senha incorreta! O registro não foi apagado.");
+            }
+          });
+
+          // Clique no card para focar no mapa
           card.addEventListener('click', () => {
             document.querySelectorAll('.item-historico').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
