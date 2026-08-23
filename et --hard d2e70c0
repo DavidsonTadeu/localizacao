@@ -1,0 +1,16 @@
+[33m4c914c7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Atualiza - video e som
+[33m27404ec[m Atualiza - video e som
+[33me77e8c1[m Atualiza erro video
+[33m25e3e00[m Atualização- video e audio
+[33md2e70c0[m Atualização do código
+[33ma1a060c[m Atualização do código
+[33m13c9369[m Atualiza painel.html com novo layout, gráficos e dark mode
+[33mb081a5e[m Implementa rastreamento continuo em tempo real via watchPosition e WakeLock
+[33m70aa0dd[m Adiciona modal de ampliacao de foto e botoes de busca por imagem
+[33ma29626b[m Exige senha 123 para confirmar exclusao de capturas
+[33m6eae553[m Adiciona geocodificacao reversa e exibicao de endereco completo no painel
+[33m6b55f7c[m Adiciona captura e exibição de selfie com localização no painel
+[33me95f65b[m Adiciona tela de login segura com criptografia SHA-256 no painel
+[33m259b4ff[m Adiciona atalho secreto com senha para o painel
+[33mbe46a6f[m Adiciona edicao em tempo real do PIX pelo painel
+[33m01f17b6[m Commit inicial: index.html e painel.html
