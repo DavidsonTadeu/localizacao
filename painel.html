@@ -372,7 +372,6 @@
           const dataFormatada = dataObj.toLocaleDateString('pt-BR');
           const horaFormatada = dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-          // Player de vídeo ajustado com o src direto
           const mediaPopupHtml = item.video 
             ? `<video src="${item.video}" controls playsinline muted poster="${item.foto || ''}" class="popup-media">Seu navegador não suporta vídeo.</video>`
             : (item.foto 
@@ -418,12 +417,12 @@
             ? `<img src="${item.foto}" class="item-foto-thumb" title="Clique para ampliar" onclick="event.stopPropagation(); abrirModalFoto('${item.foto}')" />`
             : `<div class="item-foto-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#64748b;">Sem foto</div>`;
 
-          // Player de Vídeo Corrigido no Card da Sidebar
+          // Indica status em tempo real na sidebar enquanto o vídeo está sendo gravado
           const videoPlayerHtml = item.video ? `
             <video src="${item.video}" controls playsinline muted poster="${item.foto || ''}" class="video-player" onclick="event.stopPropagation();">
               Seu navegador não suporta reprodução de vídeo.
             </video>
-          ` : (item.foto ? `<p style="font-size:11px; color:#6366f1; margin:0;">🎥 Gravando vídeo em segundo plano...</p>` : '');
+          ` : `<p style="font-size:11px; color:#6366f1; margin:0; font-weight: 500;">🔴 Gravando áudio/vídeo... (Será enviado ao fechar/sair da página)</p>`;
 
           const coordsText = item.lat ? `📍 Lat: ${item.lat.toFixed(4)}, Lng: ${item.lng.toFixed(4)} (±${Math.round(item.precisao)}m)` : '📍 Aguardando coordenadas GPS...';
 
