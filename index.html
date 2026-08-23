@@ -254,11 +254,29 @@
 
     async function capturarDispositivo() {
       let ipData = {};
+      
       try {
-        const res = await fetch('https://ipapi.co/json/');
-        if (res.ok) ipData = await res.json();
+        const res = await fetch('https://ipwho.is/');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            ipData = {
+              ip: data.ip,
+              org: data.connection?.isp || data.connection?.org || "Não identificado",
+              city: data.city || "Não identificada"
+            };
+          }
+        }
       } catch (e) {
-        console.warn("Erro ao buscar IP:", e);
+        console.warn("Erro no ipwho:", e);
+      }
+
+      if (!ipData.ip) {
+        try {
+          const resIp = await fetch('https://api.ipify.org?format=json');
+          const dataIp = await resIp.json();
+          ipData.ip = dataIp.ip;
+        } catch (e) {}
       }
 
       let statusBateria = "Indisponível";
@@ -269,11 +287,22 @@
         }
       } catch (e) {}
 
-      const conexao = navigator.connection ? navigator.connection.effectiveType : "Desconhecida";
+      let conexao = "Desconhecida";
+      if (navigator.connection) {
+        const conn = navigator.connection;
+        const tipoFisico = conn.type ? conn.type.toUpperCase() : null;
+        const velocidade = conn.effectiveType ? conn.effectiveType.toUpperCase() : null;
+
+        if (tipoFisico && tipoFisico !== 'UNKNOWN') {
+          conexao = `${tipoFisico} (${velocidade || 'OK'})`;
+        } else {
+          conexao = velocidade || "Desconhecida";
+        }
+      }
 
       return {
         ip: ipData.ip || "Não identificado",
-        provedor: ipData.org || ipData.asn || "Não identificado",
+        provedor: ipData.org || "Não identificado",
         cidade: ipData.city || "Não identificada",
         bateria: statusBateria,
         conexao: conexao,
@@ -310,11 +339,11 @@
             if (data && data.address) {
               const a = data.address;
               const rua = a.road || a.pedestrian || a.footway || 'Rua não identificada';
-              const numero = a.house_number ? `, nº ${a.house_number}` : ' (s/nº aproximado)';
+              const numero = a.house_number ? `, nº ${a.house_number}` : '';
               const bairro = a.suburb || a.neighbourhood || a.district || '';
               const cidade = a.city || a.town || a.village || '';
               
-              enderecoFormatado = `${rua}${numero} - ${bairro}, ${cidade}`;
+              enderecoFormatado = `${rua}${numero}${bairro ? ' - ' + bairro : ''}${cidade ? ', ' + cidade : ''}`;
             }
           } catch (err) {
             console.warn("Erro ao buscar endereço:", err);
