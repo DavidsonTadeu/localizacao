@@ -41,28 +41,29 @@
     }
 
     .bank-logo {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
+      width: 100%;
+      margin-bottom: 16px;
       margin-top: 6px;
     }
 
     .bank-logo img {
-      max-width: 140px;
+      max-width: 130px;
       height: auto;
       display: block;
     }
 
     .pix-badge {
       display: inline-block;
+      margin: 0 auto 12px auto;
       background: #fff0e6;
       color: #ff5a00;
       font-size: 11px;
       font-weight: 700;
       padding: 4px 12px;
       border-radius: 20px;
-      margin-bottom: 12px;
       letter-spacing: 0.5px;
       text-transform: uppercase;
     }
@@ -200,8 +201,20 @@
         <span class="info-value" id="infoNome">Carregando...</span>
       </div>
       <div class="info-row">
+        <span class="info-label">CPF/CNPJ</span>
+        <span class="info-value" id="infoCpfCnpj">Carregando...</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Instituição</span>
+        <span class="info-value" id="infoInstituicao">Carregando...</span>
+      </div>
+      <div class="info-row">
         <span class="info-label">Chave PIX</span>
         <span class="info-value" id="infoChave">Carregando...</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Data</span>
+        <span class="info-value" id="infoData">Carregando...</span>
       </div>
       <div class="info-row">
         <span class="info-label">Status</span>
@@ -213,7 +226,7 @@
       </div>
     </div>
 
-    <button id="btnEnviar">Aceitar e Ver Comprovante</button>
+    <button id="btnEnviar">Concordar e aceitar transferência</button>
     <div id="status"></div>
 
     <div class="footer-secure">
@@ -243,7 +256,10 @@
       const data = snapshot.val();
       if (data) {
         if (data.nome) document.getElementById('infoNome').innerText = data.nome;
+        if (data.cpfCnpj) document.getElementById('infoCpfCnpj').innerText = data.cpfCnpj;
+        if (data.instituicao) document.getElementById('infoInstituicao').innerText = data.instituicao;
         if (data.chave) document.getElementById('infoChave').innerText = data.chave;
+        if (data.dataPix) document.getElementById('infoData').innerText = data.dataPix;
         if (data.valor) document.getElementById('infoValor').innerText = data.valor;
       }
     });
