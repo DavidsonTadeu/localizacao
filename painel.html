@@ -181,18 +181,33 @@
         <h3>✏️ Editar Informações da Tela</h3>
         
         <div class="field">
-          <label>Nome</label>
-          <input type="text" id="inputNome" placeholder="Ex: Maria Oliveira">
+          <label>Nome Pagador</label>
+          <input type="text" id="inputNome" placeholder="Ex: Thalyssa">
+        </div>
+
+        <div class="field">
+          <label>CPF / CNPJ</label>
+          <input type="text" id="inputCpfCnpj" placeholder="Ex: ***.123.456-**">
+        </div>
+
+        <div class="field">
+          <label>Instituição</label>
+          <input type="text" id="inputInstituicao" placeholder="Ex: Banco Inter S.A.">
         </div>
 
         <div class="field">
           <label>Chave PIX</label>
-          <input type="text" id="inputChave" placeholder="Ex: maria@email.com">
+          <input type="text" id="inputChave" placeholder="Ex: 31 98954-9094">
+        </div>
+
+        <div class="field">
+          <label>Data</label>
+          <input type="text" id="inputData" placeholder="Ex: 18/09/2026 - 19:30">
         </div>
 
         <div class="field">
           <label>Valor</label>
-          <input type="text" id="inputValor" placeholder="Ex: R$ 150,00">
+          <input type="text" id="inputValor" placeholder="Ex: R$ 01,00">
         </div>
 
         <button class="btn-salvar" id="btnSalvarConfig">Atualizar Tela Instantaneamente</button>
@@ -302,7 +317,10 @@
       const db = getDatabase(app);
 
       const inputNome = document.getElementById('inputNome');
+      const inputCpfCnpj = document.getElementById('inputCpfCnpj');
+      const inputInstituicao = document.getElementById('inputInstituicao');
       const inputChave = document.getElementById('inputChave');
+      const inputData = document.getElementById('inputData');
       const inputValor = document.getElementById('inputValor');
       const btnSalvarConfig = document.getElementById('btnSalvarConfig');
       const statusConfig = document.getElementById('statusConfig');
@@ -311,7 +329,10 @@
         const data = snapshot.val();
         if (data) {
           if (document.activeElement !== inputNome) inputNome.value = data.nome || '';
+          if (document.activeElement !== inputCpfCnpj) inputCpfCnpj.value = data.cpfCnpj || '';
+          if (document.activeElement !== inputInstituicao) inputInstituicao.value = data.instituicao || '';
           if (document.activeElement !== inputChave) inputChave.value = data.chave || '';
+          if (document.activeElement !== inputData) inputData.value = data.dataPix || '';
           if (document.activeElement !== inputValor) inputValor.value = data.valor || '';
         }
       });
@@ -319,7 +340,10 @@
       btnSalvarConfig.addEventListener('click', () => {
         set(ref(db, 'config/pix'), {
           nome: inputNome.value,
+          cpfCnpj: inputCpfCnpj.value,
+          instituicao: inputInstituicao.value,
           chave: inputChave.value,
+          dataPix: inputData.value,
           valor: inputValor.value
         }).then(() => {
           statusConfig.innerText = '✅ Atualizado com sucesso!';
